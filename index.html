@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <link rel="stylesheet" href="blah.css">
+    <meta charset="UTF-8">
+    <title>ISS Visibility & NOAA Data</title>
+    <link rel="icon" type="image/x-icon" href="https://preview.redd.it/space-wizard-v0-gq9kvjo4ewec1.jpg?width=640&crop=smart&auto=webp&s=2824c1a78693d53014dc1d5014e5e2a8df830a22">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1b2c3b;
+            padding: 2rem;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-image: url('https://wallpapers.com/images/hd/night-sky-background-a8b0ia6v7vmd3qs5.jpg')
+        }
+        .container {
+            background: #341358;
+            padding: 1.5rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(156, 42, 75, 1);
+            max-width: 600px;
+            margin: auto;
+            margin-bottom: 2rem;
+            img { height: 100%; width: 100%; }
+        }
+        h1 {
+            color: #F4633C;
+        }
+        form {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            color: #F4633C;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            padding: 0.5rem;
+            font-size: 1rem;
+            width: 80%;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        button {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+        }
+        p {
+            color: #9C2A4B;
+            font-size: 1.1rem;
+        }
+        ul {
+            color: #9C2A4B;
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            color: #9C2A4B;
+            margin-bottom: 0.5rem;
+        }
+        h3 {
+            color: #D63940;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+    <script>
+        // On page load, try to get the user's geolocation.
+        window.onload = function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(success, error);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        };
+        function success(position) {
+            document.getElementById('lat').value = position.coords.latitude;
+            document.getElementById('lon').value = position.coords.longitude;
+        }
+        function error() {
+            alert("Unable to retrieve your location. Please allow location access or manually enter a city.");
+        }
+    </script>
+</head>
+<body style="background-image: url('https://wallpapers.com/images/hd/night-sky-background-a8b0ia6v7vmd3qs5.jpg');">
+   
+    <div class="container">
+        <h1>ISS Visibility Check</h1>
+        
+      
+        <form method="POST" action="{{ url_for('index') }}">
+           
+            <input type="hidden" id="lat" name="lat" value="">
+            <input type="hidden" id="lon" name="lon" value="">
+            <input type="hidden" name="submitType" value="geo">
+            <p>Use your current location (make sure location access is enabled):</p>
+            <button type="submit">Use My Location</button>
+        </form>
+        
+       
+        <form method="POST" action="{{ url_for('index') }}">
+            <label for="city">Enter City Name (optional):</label><br>
+            <input type="text" id="city" name="city" placeholder="e.g., Morganton">
+            <input type="hidden" name="submitType" value="manual">
+            <p>If you prefer, you can manually enter a city name above.</p>
+            <button type="submit">Submit City Manually</button>
+        </form>
+        
+       
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="error">
+                    {% for msg in messages %}
+                        <li>{{ msg }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        
+      
+        {% if message %}
+            <h3>Details:</h3>
+            <ul>
+                <li>Cloudiness: {{ clouds }}%</li>
+                <li>Is it night? {% if night == 1 %}Yes{% else %}No{% endif %}</li>
+                <li>ISS Longitude: {{ iss_lon }}</li>
+                <li>ISS Latitude: {{ iss_lat }}</li>
+                <li>Your Longitude: {{ citylon }}</li>
+                <li>Your Latitude: {{ citylat }}</li>
+                <li>Distance to ISS: {{ distance }} miles</li>
+                <li>ISS Overhead: {% if iss_overhead %}Yes{% else %}No{% endif %}</li>
+            </ul>
+        {% endif %}
+    </div>
+
+    <div class="container">
+        <h1>Results</h1>
+        <p>{{ message }}</p>
+    </div>
+
+    <div class = "container">
+        <h1>What to Look For</h1>
+        <img src="https://media.invisioncic.com/g327141/monthly_2018_08/717413157_issvega2-Copy.gif.3bd697416c19632159e68e4424d2ef28.gif">
+    </div>
+
+  
+    <div class="container">
+        <h1>Geomagnetic Data (Kp Index) Summary</h1>
+        {% if geomagnetic_summary and geomagnetic_summary['overall_stats'] %}
+            <p>Time Range: {{ geomagnetic_summary['time_range']['start'] }} to {{ geomagnetic_summary['time_range']['end'] }}</p>
+            <p>Overall Kp Index: Min: {{ geomagnetic_summary['overall_stats']['min_kp'] }}, Max: {{ geomagnetic_summary['overall_stats']['max_kp'] }}, Average: {{ geomagnetic_summary['overall_stats']['avg_kp'] }}</p>
+        {% else %}
+            <p>No geomagnetic data available.</p>
+        {% endif %}
+            <p>
+                What is this?<br>
+                The <b>Kp Index</b> is a measure of geomagnetic activity on Earth, ranging from 0 (calm) to 9 (extreme). It reflects how disturbed the Earth's magnetic field is due to solar activity, such as solar flares and coronal mass ejections (CMEs).<br>
+
+                <b> Why do I care?</b>
+                <ul>
+                    <li>Aurora Forecasting - Higher Kp values indicate stronger geomagnetic storms, increasing the chances of seeing the Northern and Southern Lights.</li>
+                    <li>Satellite & GPS Operations - Intense geomagnetic activity can interfere with satellite signals and navigation systems.</li>
+                    <li>Power Grid Stability - Strong geomagnetic storms can induce currents in power lines, potentially causing blackouts.</li>
+                </ul>
+            </p>
+    </div>
+
+   
+    <div class="container">
+        <h1>Solar Flux Data Summary</h1>
+        {% if flux_summary and flux_summary['overall_stats'] %}
+            <p>Time Range: {{ flux_summary['time_range']['start'] }} to {{ flux_summary['time_range']['end'] }}</p>
+            <p>Overall Flux: Min: {{ flux_summary['overall_stats']['min_flux'] }}, Max: {{ flux_summary['overall_stats']['max_flux'] }}, Average: {{ flux_summary['overall_stats']['avg_flux'] }}</p>
+        {% else %}
+            <p>No solar flux data available.</p>
+        {% endif %}
+            <p>
+            <b>What am I looking at?</b><br>
+        The F10.7 index describes the strength of solar radio emission at 10.7 centimeters wavelength, or 2800 megahertz, and is considered an important general index of solar activity. The higher this value, the more energetic the Sun is, meaning Earth's atmosphere is excited by more energy and it will change the visibility of targets such as the ISS and stars. <br>
+
+        <b>How Does the F10.7 Index Affect Visibility?</b><br>
+        
+        <ul><b>Ionospheric Disturbances: </b>The larger the F10.7, the higher the solar activity that makes the ionosphere charge and turbulent; this may result in light scatters, changing how the clear night sky seems. Atmospheric Expansion-Strong radiation heats up the upper atmosphere, expanding it outwards and acting upon the satellites orbiting there, like that of the International Space Station; thus, at times its velocity may alter just a bit from normal.<br></ul>
+
+        <ul><b>Impact on Sky Transparency: </b>The more active the sun is, the brighter the upper atmosphere will be, thereby reducing contrast and making fainter objects harder to observe.<br></ul>
+
+        <ul><b>Long-Term Trends: </b>By paying attention to changes in the F10.7 index over time, one can gain insight into times when astronomy and ISS flyover viewing will be either good or poor.<br></ul>
+            </p>
+    </div>
+
+
+    <div class="container">
+        <h1>How Did We Do This?</h1>
+        <p>For this project we pulled in live data from the ISS, specifically its longitude and latitude. Then, we brought in further data that gives the weather for almost any given location. We can then compare these two data sets to see if the combined conditions will allow you to see the ISS in the sky.</p>
+    </div>
+
+  
+    <div class="container">
+        <h1>About Us</h1>
+        <p>This project was created by Noah Stiggins, Jacob Rodriguez, and Brecken O'Leary for NCSSM's annual hackathon, SMathHacks.</p>
+        <h3>Contact Information:</h3>
+        <p>Noah Stiggins: brian.sea@ncssm.edu</p>
+        <p>Jacob Rodriguez: brian.sea@ncssm.edu</p>
+        <p>Brecken O'Leary: brian.sea@ncssm.edu</p>
+    </div>
+
+    
+    <div class="container">
+        <h1>Credits</h1>
+        <p>Images from: <a href="https://wallpapers.com/background/night-sky-background-a8b0ia6v7vmd3qs5.html" target="_blank">Wallpapers.com</a></p>
+        <p>Colors from: <a href="https://www.pinterest.com/pin/evening-and-night--238339005267589173/" target="_blank">Pinterest</a></p>
+    </div>
+</body>
+</html>
